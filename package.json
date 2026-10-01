@@ -12,8 +12,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "next build && electron-builder",
+    "electron:dev": "electron .",
+    "electron:build": "next build && electron-builder -p always",
     "deploy": "npm version patch && git push --follow-tags"
   },
   "build": {

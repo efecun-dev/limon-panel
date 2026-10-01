@@ -638,7 +638,7 @@ export default function Dashboard() {
                   {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
                     <th 
                       key={day} 
-                      className="px-1 py-3 text-center border-r border-gray-700 min-w-[65px] cursor-pointer hover:bg-gray-800 group select-none"
+                      className="px-1 py-3 text-right border-r border-gray-700 min-w-[50px] cursor-pointer hover:bg-gray-800 group select-none"
                       onClick={() => {
                         if (tableSortConfig.key === day) {
                           if (tableSortConfig.direction === 'desc') setTableSortConfig({ key: day, direction: 'asc' });
@@ -648,7 +648,7 @@ export default function Dashboard() {
                         }
                       }}
                     >
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-end gap-1 pr-1">
                         <span>{day}</span>
                         <span className="text-[9px] text-gray-500 group-hover:text-gray-300">
                           {tableSortConfig.key === day ? (tableSortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
@@ -663,7 +663,7 @@ export default function Dashboard() {
                   <tr key={idx} className="group border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-2.5 font-bold text-[12px] text-gray-900 sticky left-0 bg-white group-hover:bg-gray-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[130px] w-[131px] max-w-[131px]">{row.branchName}</td>
                     <td className="px-4 py-2.5 font-black text-[14px] text-emerald-700 sticky left-[129px] bg-white group-hover:bg-gray-50 z-10 border-l border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-right tabular-nums tracking-tight">
-                      {row.total > 0 ? row.total.toLocaleString('tr-TR') : '-'}
+                      {row.total > 0 ? row.total.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) : '-'}
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                       const currentDayVal = row.days[day];
@@ -682,10 +682,10 @@ export default function Dashboard() {
                       return (
                         <td 
                           key={day} 
-                          className={`px-2 py-2.5 text-center border-r border-gray-100 text-[12px] font-bold tabular-nums tracking-tight ${bgClass}`}
+                          className={`px-1 py-2.5 text-right border-r border-gray-100 text-[12px] font-bold tabular-nums tracking-tight pr-2 ${bgClass}`}
                           title={orderCount > 0 ? `${orderCount} sipariş` : ''}
                         >
-                          {currentDayVal > 0 ? currentDayVal.toLocaleString('tr-TR') : '-'}
+                          {currentDayVal > 0 ? currentDayVal.toLocaleString('tr-TR', { maximumFractionDigits: 0 }) : '-'}
                         </td>
                       );
                     })}

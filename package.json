@@ -23,13 +23,14 @@
     "publish": [
       {
         "provider": "github",
-        "releaseType": "release"
+        "releaseType": "release",
+        "private": true
       }
     ],
     "directories": {
       "output": "dist"
     },
-    "asar": true,
+    "asar": false,
     "files": [
       "main.js",
       "preload.js",

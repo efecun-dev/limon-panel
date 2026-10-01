@@ -27,7 +27,7 @@ try {
   console.error("Env loading error:", e);
 }
 
-const dev = !app.isPackaged;
+const dev = !true;
 const dir = path.join(__dirname);
 const nextApp = next({ dev, dir });
 const handle = nextApp.getRequestHandler();
@@ -36,9 +36,6 @@ let mainWindow;
 
 app.whenReady().then(() => {
   // Check for updates
-  if (process.env.GITHUB_UPDATE_TOKEN) {
-    autoUpdater.addAuthHeader(`Bearer ${process.env.GITHUB_UPDATE_TOKEN}`);
-  }
   autoUpdater.checkForUpdatesAndNotify();
 
   nextApp.prepare().then(() => {
@@ -106,3 +103,4 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+

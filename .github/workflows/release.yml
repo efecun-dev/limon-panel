@@ -1,0 +1,27 @@
+name: Build and Release Electron App
+
+on:
+  push:
+    tags:
+      - 'v*' # Sadece v ile başlayan tag'ler atıldığında tetiklenir (örn: v1.0.1)
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Next.js & Electron App
+        run: npm run electron:build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

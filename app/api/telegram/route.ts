@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendTelegramMessage } from "@/lib/telegram";
+import { redis } from "@/lib/redis";
 
 export async function POST(req: Request) {
   try {
@@ -8,6 +9,23 @@ export async function POST(req: Request) {
     if (body.type === 'order') {
       const { orderNumber, totalPrice, currencyCode, customer, storeId, lines, note } = body;
       
+      // Aynı sipariş için birden fazla uygulamanın bildirim atmasını engelle
+      if (orderNumber) {
+        try {
+          // Redis.setnx (Set if Not eXists) kullanarak atomic kontrol yapıyoruz
+          const lockKey = `telegram_notified_order_${orderNumber}`;
+          const isSet = await redis.setnx(lockKey, "1");
+          if (!isSet) {
+            // Eğer isSet 0 ise (false), bu sipariş daha önce başka bilgisayar tarafından işlenmiş demektir.
+            return NextResponse.json({ success: true, message: "Bildirim zaten gönderildi" });
+          }
+          // 24 saat sonra kilidi kaldır (Redis hafızası dolmasın)
+          await redis.expire(lockKey, 86400);
+        } catch (e) {
+          console.error("Redis kilidi alınamadı:", e);
+        }
+      }
+
       const BRANCHES: Record<string, string> = {
         "479045": "Atakum Gross",
         "479052": "Barış",

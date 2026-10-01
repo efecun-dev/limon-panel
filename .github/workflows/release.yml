@@ -24,6 +24,14 @@ jobs:
         run: npm install
 
       - name: Build Next.js & Electron App
-        run: npm run electron:build -- --publish always
+        run: npm run build && npx electron-builder --publish never
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/latest.yml
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

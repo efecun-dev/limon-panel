@@ -697,7 +697,7 @@ export default function Dashboard() {
                   <tr className="bg-gray-100 border-t-2 border-gray-300 group hover:bg-gray-200">
                     <td className="px-4 py-3 font-black text-[12px] text-gray-900 sticky left-0 bg-gray-100 group-hover:bg-gray-200 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] uppercase tracking-wider min-w-[130px] w-[131px] max-w-[131px]">GENEL TOPLAM</td>
                     <td className="px-4 py-3 font-black text-[14px] text-gray-900 sticky left-[129px] bg-gray-100 group-hover:bg-gray-200 z-10 border-l border-gray-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-right tabular-nums tracking-tight">
-                      {totalRow.total > 0 ? totalRow.total.toLocaleString('tr-TR') : '-'}
+                      {totalRow.total > 0 ? Math.floor(totalRow.total).toLocaleString('tr-TR') : '-'}
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                         const currentDayVal = totalRow.days[day];
@@ -719,7 +719,7 @@ export default function Dashboard() {
                             className={`px-2 py-3 text-center border-r border-gray-300 text-[12px] font-black tabular-nums tracking-tight ${bgClass}`}
                             title={orderCount > 0 ? `${orderCount} sipariş` : ''}
                           >
-                            {currentDayVal > 0 ? currentDayVal.toLocaleString('tr-TR') : '-'}
+                            {currentDayVal > 0 ? Math.floor(currentDayVal).toLocaleString('tr-TR') : '-'}
                           </td>
                         );
                     })}

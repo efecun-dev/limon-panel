@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import UpdateManager from "./UpdateManager";
 
 const NAV_ITEMS = [
   {
@@ -215,6 +216,10 @@ export default function Navbar() {
             </svg>
             ÇIKIŞ
           </button>
+        </div>
+
+        <div className="ml-auto flex items-center pr-4">
+          <UpdateManager />
         </div>
       </div>
     </nav>

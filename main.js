@@ -36,7 +36,8 @@ app.whenReady().then(() => {
         icon: path.join(__dirname, 'public/limonlogo.ico'), // Limon Logosu
         webPreferences: {
           nodeIntegration: false,
-          contextIsolation: true
+          contextIsolation: true,
+          preload: path.join(__dirname, 'preload.js')
         }
       });
 
@@ -44,8 +45,35 @@ app.whenReady().then(() => {
       mainWindow.setMenuBarVisibility(false);
 
       mainWindow.loadURL(`http://localhost:${PORT}`);
+
+      // Auto Updater Events
+      autoUpdater.on('update-available', () => {
+        mainWindow.webContents.send('update-available');
+      });
+      autoUpdater.on('update-not-available', () => {
+        mainWindow.webContents.send('update-not-available');
+      });
+      autoUpdater.on('download-progress', (progressObj) => {
+        mainWindow.webContents.send('download-progress', progressObj);
+      });
+      autoUpdater.on('update-downloaded', () => {
+        mainWindow.webContents.send('update-downloaded');
+      });
+      autoUpdater.on('error', (err) => {
+        mainWindow.webContents.send('update-error', err.toString());
+      });
     });
   });
+});
+
+const { ipcMain } = require('electron');
+
+ipcMain.on('check-for-updates', () => {
+  autoUpdater.checkForUpdates();
+});
+
+ipcMain.on('install-update', () => {
+  autoUpdater.quitAndInstall();
 });
 
 app.on('window-all-closed', () => {

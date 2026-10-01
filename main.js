@@ -4,6 +4,28 @@ const { parse } = require('url');
 const next = require('next');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
+const fs = require('fs');
+
+// Asar arşivi içinden .env.local dosyasını manuel okuyup process.env'e ekliyoruz
+try {
+  const envPath = path.join(__dirname, '.env.local');
+  if (fs.existsSync(envPath)) {
+    const envFile = fs.readFileSync(envPath, 'utf-8');
+    envFile.split('\n').forEach(line => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2] || '';
+        if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    });
+  }
+} catch (e) {
+  console.error("Env loading error:", e);
+}
 
 const dev = !app.isPackaged;
 const dir = path.join(__dirname);

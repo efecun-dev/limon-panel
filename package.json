@@ -19,6 +19,7 @@
   "build": {
     "appId": "com.limonsupermarket.panel",
     "productName": "Limon Panel",
+    "artifactName": "Limon-Panel-Setup-${version}.${ext}",
     "publish": [
       {
         "provider": "github",

@@ -34,6 +34,11 @@
       "main.js",
       "preload.js",
       "package.json",
+      "node_modules/**/*",
+      "!node_modules/electron{,/**/*}",
+      "!node_modules/electron-builder{,/**/*}",
+      "!node_modules/tailwindcss{,/**/*}",
+      "!node_modules/@tailwindcss{,/**/*}",
       ".next/**/*",
       "public/**/*",
       ".env.local"

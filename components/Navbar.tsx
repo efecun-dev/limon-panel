@@ -134,7 +134,7 @@ export default function Navbar() {
   if (pathname === "/login") return null;
 
   return (
-    <nav className="sticky top-0 z-50 bg-red-900 border-b border-gray-700">
+    <nav className="sticky top-0 z-50 bg-gray-900 border-b border-gray-700">
       <div className="w-full px-4 md:px-6 flex items-center h-12 overflow-x-auto no-scrollbar gap-0">
 
         {/* Logo */}
@@ -164,8 +164,8 @@ export default function Navbar() {
                 <Link
                   href={item.href}
                   className={`relative flex items-center gap-1.5 px-3 h-12 text-[13px] font-semibold tracking-wide transition-colors select-none ${isActive
-                      ? "text-white"
-                      : "text-gray-400 hover:text-gray-200"
+                    ? "text-white"
+                    : "text-gray-400 hover:text-gray-200"
                     }`}
                 >
                   {/* Active bottom line */}
@@ -190,8 +190,8 @@ export default function Navbar() {
           <Link
             href={INSTAGRAM_ITEM.href}
             className={`relative flex items-center gap-1.5 px-3 h-12 text-[13px] font-semibold tracking-wide transition-colors select-none ${pathname === INSTAGRAM_ITEM.href
-                ? "text-white"
-                : "text-gray-400 hover:text-gray-200"
+              ? "text-white"
+              : "text-gray-400 hover:text-gray-200"
               }`}
           >
             {pathname === INSTAGRAM_ITEM.href && (

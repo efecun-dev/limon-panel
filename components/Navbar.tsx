@@ -17,6 +17,36 @@ const NAV_ITEMS = [
     statsKey: null as null | "reviews" | "orders" | "returns",
   },
   {
+    href: "/ciro-analizi",
+    label: "Ciro Analizi",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+    statsKey: null as null | "reviews" | "orders" | "returns",
+  },
+  {
+    href: "/stok-yonetimi",
+    label: "Stok Yönetimi",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      </svg>
+    ),
+    statsKey: null as null | "reviews" | "orders" | "returns",
+  },
+  {
+    href: "/sube-yonetimi",
+    label: "Şube Yönetimi",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+    ),
+    statsKey: null as null | "reviews" | "orders" | "returns",
+  },
+  {
     href: "/yorumlar",
     label: "Yorum Yönetimi",
     icon: <img src="/trendyol.png" alt="Trendyol" className="w-4 h-4 rounded-sm" />,
@@ -35,12 +65,6 @@ const NAV_ITEMS = [
     statsKey: "returns" as const,
   },
 ];
-
-const INSTAGRAM_ITEM = {
-  href: "/instagram-yorumlari",
-  label: "Instagram",
-  icon: <img src="/instagram.png" alt="Instagram" className="w-4 h-4 rounded-sm object-cover" />,
-};
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -157,7 +181,7 @@ export default function Navbar() {
 
             return (
               <div key={item.href} className="flex items-center">
-                {/* Separator before Instagram group */}
+                {/* Separator after Home */}
                 {i > 0 && i === 1 && (
                   <div className="w-px h-4 bg-gray-700 mx-2" />
                 )}
@@ -184,42 +208,57 @@ export default function Navbar() {
             );
           })}
 
-          {/* Divider before Instagram */}
-          <div className="w-px h-4 bg-gray-700 mx-2" />
-
-          <Link
-            href={INSTAGRAM_ITEM.href}
-            className={`relative flex items-center gap-1.5 px-3 h-12 text-[13px] font-semibold tracking-wide transition-colors select-none ${pathname === INSTAGRAM_ITEM.href
-              ? "text-white"
-              : "text-gray-400 hover:text-gray-200"
-              }`}
-          >
-            {pathname === INSTAGRAM_ITEM.href && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white" />
-            )}
-            {INSTAGRAM_ITEM.icon}
-            {INSTAGRAM_ITEM.label}
-          </Link>
         </div>
 
-        {/* Logout */}
-        <div className="ml-auto flex items-center">
+        {/* Right Side Actions: Update -> Zoom -> Logout */}
+        <div className="ml-auto flex items-center gap-3 pr-4">
+          
+          <UpdateManager />
+
+          {/* Zoom Controls */}
+          <div className="flex items-center bg-gray-800 rounded-md overflow-hidden border border-gray-700">
+            <button 
+              onClick={() => (window as any).electronAPI?.zoomOut()}
+              className="px-2 py-1.5 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+              title="Uzaklaştır"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
+            </button>
+            <button 
+              onClick={() => (window as any).electronAPI?.zoomReset()}
+              className="px-2 py-1.5 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors border-x border-gray-700"
+              title="Ölçeği Sıfırla"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10V3L4 14h7v8l9-11h-7z" />
+              </svg>
+            </button>
+            <button 
+              onClick={() => (window as any).electronAPI?.zoomIn()}
+              className="px-2 py-1.5 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+              title="Yakınlaştır"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Logout */}
           <button
             onClick={async () => {
               await fetch("/api/auth/logout", { method: "POST" });
               window.location.href = "/login";
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 rounded-md transition-colors text-[12px] font-bold tracking-wide"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 rounded-md transition-colors text-[12px] font-bold tracking-wide shrink-0"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             ÇIKIŞ
           </button>
-        </div>
-
-        <div className="ml-auto flex items-center pr-4">
-          <UpdateManager />
         </div>
       </div>
     </nav>

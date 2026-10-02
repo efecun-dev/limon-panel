@@ -101,6 +101,23 @@ ipcMain.on('install-update', () => {
   autoUpdater.quitAndInstall();
 });
 
+ipcMain.on('zoom-in', (event) => {
+  const webContents = event.sender;
+  const currentZoom = webContents.getZoomLevel();
+  webContents.setZoomLevel(currentZoom + 0.5);
+});
+
+ipcMain.on('zoom-out', (event) => {
+  const webContents = event.sender;
+  const currentZoom = webContents.getZoomLevel();
+  webContents.setZoomLevel(currentZoom - 0.5);
+});
+
+ipcMain.on('zoom-reset', (event) => {
+  const webContents = event.sender;
+  webContents.setZoomLevel(0);
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();

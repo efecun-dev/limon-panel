@@ -50,12 +50,57 @@ export async function GET(request: Request) {
         page++;
       }
 
+      // Her iade için bağlı olduğu paketi paralel olarak bul ve storeId + orderDetails ekle
+      const uniqueOrders = new Map<string, { orderNumber: string; orderDate: number; packageId: number }>();
+      for (const c of allContent) {
+        if (c.orderNumber && !uniqueOrders.has(c.orderNumber)) {
+          uniqueOrders.set(c.orderNumber, {
+            orderNumber: c.orderNumber,
+            orderDate: c.orderDate,
+            packageId: c.orderShipmentPackageId,
+          });
+        }
+      }
+
+      const orderPackageMap: Record<string, any> = {};
+      await Promise.all(
+        Array.from(uniqueOrders.values()).map(async ({ orderNumber, orderDate, packageId }) => {
+          try {
+            const res = await axios.get(
+              `https://api.tgoapis.com/integrator/order/grocery/suppliers/${supplierId}/packages`,
+              {
+                headers: {
+                  "Authorization": `Basic ${process.env.TRENDYOL_TOKEN}`,
+                  "x-agentname": agentName,
+                  "x-executor-user": executorUser,
+                },
+                params: {
+                  startDate: orderDate - 3600000,
+                  endDate: orderDate + 3600000,
+                  size: 50,
+                },
+              }
+            );
+            const pkg = res.data?.content?.find((p: any) => p.orderNumber === orderNumber || p.id === packageId);
+            if (pkg) {
+              orderPackageMap[orderNumber] = pkg;
+            }
+          } catch {}
+        })
+      );
+
+      for (const c of allContent) {
+        const pkg = orderPackageMap[c.orderNumber];
+        c.storeId = pkg?.storeId || null;
+        c.orderDetails = pkg || null;
+      }
+
       const responseData = {
         content: allContent,
         totalElements: allContent.length,
       };
       
-      await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 5).catch(() => null);
+      await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 15).catch(() => null);
       
       return NextResponse.json(responseData);
     } catch (error: any) {
@@ -109,6 +154,7 @@ export async function GET(request: Request) {
             ],
             "claimDate": 1673727792442,
             "orderDate": 1673646351661,
+            "storeId": 479045,
             "returnedSeller": true,
             "objectionableClaim": true
         }

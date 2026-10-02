@@ -71,6 +71,65 @@ export async function GET(request: Request) {
         
         // Sadece istenen süre içindeki siparişleri tut
         filteredContent = filteredContent.filter((pkg: any) => pkg.orderDate >= cutoffDate);
+      } else if (orderNumber) {
+        const orderDateStr = searchParams.get("orderDate");
+        const orderDateNum = orderDateStr ? parseInt(orderDateStr, 10) : 0;
+
+        if (orderDateNum > 0) {
+          const response = await axios.get(
+            `https://api.tgoapis.com/integrator/order/grocery/suppliers/${supplierId}/packages`,
+            {
+              headers: {
+                "Authorization": `Basic ${process.env.TRENDYOL_TOKEN}`,
+                "x-agentname": agentName,
+                "x-executor-user": executorUser,
+              },
+              params: {
+                startDate: orderDateNum - 3600000,
+                endDate: orderDateNum + 3600000,
+                size: 50,
+              },
+            }
+          );
+          filteredContent = (response.data?.content || []).filter((pkg: any) => pkg.orderNumber === orderNumber);
+          totalPages = 1;
+          totalElements = filteredContent.length;
+        } else {
+          // Sayfaları tara
+          let page = 0;
+          const maxPages = 8;
+          let found: any[] = [];
+
+          while (page < maxPages) {
+            const response = await axios.get(
+              `https://api.tgoapis.com/integrator/order/grocery/suppliers/${supplierId}/packages`,
+              {
+                headers: {
+                  "Authorization": `Basic ${process.env.TRENDYOL_TOKEN}`,
+                  "x-agentname": agentName,
+                  "x-executor-user": executorUser,
+                },
+                params: {
+                  size: 200,
+                  page: page,
+                },
+              }
+            );
+            const content = response.data?.content || [];
+            const matches = content.filter((pkg: any) => pkg.orderNumber === orderNumber);
+            if (matches.length > 0) {
+              found = matches;
+              break;
+            }
+            if (!content.length || page >= (response.data?.totalPages || 1) - 1) {
+              break;
+            }
+            page++;
+          }
+          filteredContent = found;
+          totalPages = 1;
+          totalElements = found.length;
+        }
       } else {
         const response = await axios.get(
           `https://api.tgoapis.com/integrator/order/grocery/suppliers/${supplierId}/packages`,
@@ -81,7 +140,6 @@ export async function GET(request: Request) {
               "x-executor-user": executorUser,
             },
             params: {
-              orderNumber: orderNumber || undefined,
               size: sizeParam,
               page: pageParam,
             }
@@ -91,10 +149,6 @@ export async function GET(request: Request) {
         filteredContent = response.data?.content || [];
         totalPages = response.data?.totalPages || 1;
         totalElements = response.data?.totalElements || filteredContent.length;
-      }
-      
-      if (orderNumber && fetchDays === 0) {
-        filteredContent = filteredContent.filter((pkg: any) => pkg.orderNumber === orderNumber);
       }
 
       const responseData = {

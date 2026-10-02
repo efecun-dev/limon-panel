@@ -29,8 +29,39 @@ const getBranchName = (storeId: number | string) => {
 const formatTime = (ts: number) =>
   new Date(ts).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
+// ─── İptal Sebebi Çözümleme Fonksiyonu ──────────────────────────────────────────
+export const getCancellationReason = (order: any): string | null => {
+  if (!order) return null;
+  if (order.cancelInfo?.reason) return order.cancelInfo.reason;
+  if (order.cancelReason) return order.cancelReason;
+  if (order.cancellationReason) return order.cancellationReason;
+  if (order.cancelReasonDescription) return order.cancelReasonDescription;
+  if (order.unSuppliedReason) return order.unSuppliedReason;
+  if (order.packageCancelReason) return order.packageCancelReason;
 
-// ─── Status config (text-only, monochromatic dots) ─────────────────────────
+  if (order.cancelInfo?.reasonType) {
+    const typeMap: Record<string, string> = {
+      CustomerRequest: "Müşteri İptal Talebi",
+      UnSupplied: "Tedarik Problemi (Stok/Ürün Yok)",
+      Technical: "Sistem / Ödeme Hatası",
+      Carrier: "Kurye / Taşıma Kaynaklı İptal",
+      Store: "Mağaza İptali",
+      Fraud: "Şüpheli İşlem",
+      Timeout: "Süre Aşımı İptali",
+    };
+    return typeMap[order.cancelInfo.reasonType] || order.cancelInfo.reasonType;
+  }
+
+  if (order.packageStatus === "UnSupplied") {
+    return "Tedarik Problemi (Sipariş Hazırlanamadı)";
+  }
+
+  if (order.packageStatus === "Cancelled") {
+    return "İptal Sebebi Belirtilmemiş";
+  }
+
+  return null;
+};
 const STATUS_MAP: Record<string, { label: string; dot: string; text: string }> = {
   Created: { label: "Yeni Sipariş", dot: "bg-blue-500", text: "text-blue-700" },
   Picking: { label: "Toplanıyor", dot: "bg-amber-500", text: "text-amber-700" },
@@ -122,12 +153,12 @@ function CustomSelect({
 }
 
 // ─── Timeline step ─────────────────────────────────────────────────────────────
-function TimelineStep({ label, time, done }: { label: string; time: string; done: boolean }) {
+function TimelineStep({ label, time, done, isCancel }: { label: string; time: string; done: boolean; isCancel?: boolean }) {
   return (
     <div className="relative pl-5">
-      <div className={`absolute w-2.5 h-2.5 rounded-full -left-[5px] top-1 ring-2 ring-white ${done ? "bg-gray-800" : "bg-gray-200"}`} />
-      <div className={`text-[14px] font-bold ${done ? "text-gray-900" : "text-gray-400"}`}>{label}</div>
-      <div className={`text-[13px] mt-0.5 ${done ? "text-gray-500" : "text-gray-300"}`}>{done ? time : "—"}</div>
+      <div className={`absolute w-2.5 h-2.5 rounded-full -left-[5px] top-1 ring-2 ring-white ${isCancel ? "bg-red-600 animate-pulse" : done ? "bg-gray-800" : "bg-gray-200"}`} />
+      <div className={`text-[14px] font-bold ${isCancel ? "text-red-700" : done ? "text-gray-900" : "text-gray-400"}`}>{label}</div>
+      <div className={`text-[13px] mt-0.5 ${isCancel ? "text-red-600 font-semibold" : done ? "text-gray-500" : "text-gray-300"}`}>{done ? time : "—"}</div>
     </div>
   );
 }
@@ -144,6 +175,7 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
   const totalItems = order.lines?.reduce((acc: number, line: any) => acc + (line.items?.length || 1), 0) || 0;
   const isToday = new Date(order.orderDate).toDateString() === new Date().toDateString();
   const isCancelled = ["Cancelled", "UnSupplied"].includes(order.packageStatus);
+  const cancelReason = isCancelled ? getCancellationReason(order) : null;
 
   // 1. Kabul süresi
   const acceptanceSec = order.sellerAcceptedDate && order.orderDate
@@ -175,14 +207,25 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
 
   const tStart = order.orderDate || Date.now();
   const tEnd = order.packageStatus === "Delivered" && order.lastModifiedDate ? order.lastModifiedDate : Date.now();
+  const cancelTime = order.lastModifiedDate ? formatTime(order.lastModifiedDate) : "—";
+
   const steps = [
     { label: "Sipariş Geldi", done: true, time: formatTime(tStart) },
     { label: "Kabul Edildi", done: !!(order.sellerAcceptedDate || order.packageStatus !== "Created"), time: order.sellerAcceptedDate ? formatTime(order.sellerAcceptedDate) : formatTime(tStart + 45000) },
     { label: "Hazırlandı", done: ["Picking", "Invoiced", "Shipped", "Delivered"].includes(order.packageStatus), time: formatTime(tStart + 180000) },
     { label: "Faturalandı", done: ["Invoiced", "Shipped", "Delivered"].includes(order.packageStatus), time: formatTime(tStart + 420000) },
     { label: "Yolda", done: ["Shipped", "Delivered"].includes(order.packageStatus), time: formatTime(tStart + 900000) },
-    { label: "Teslim Edildi", done: order.packageStatus === "Delivered", time: order.lastModifiedDate ? formatTime(tEnd) : "—" },
+    { label: "Teslim Edildi", done: order.packageStatus === "Delivered", time: order.packageStatus === "Delivered" && order.lastModifiedDate ? formatTime(tEnd) : "—" },
   ];
+
+  if (isCancelled) {
+    steps.push({
+      label: `İptal Edildi (${cancelReason || "İptal"})`,
+      done: true,
+      time: cancelTime,
+      isCancel: true,
+    } as any);
+  }
 
   return (
     <div
@@ -197,7 +240,7 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
     >
       {/* Row summary */}
       <div
-        className="px-6 py-3.5 grid grid-cols-1 lg:grid-cols-[180px_140px_1fr_160px_160px_36px] gap-4 items-center cursor-pointer hover:bg-gray-100/60 transition-colors select-none"
+        className="px-6 py-3.5 grid grid-cols-1 lg:grid-cols-[180px_170px_1fr_160px_160px_36px] gap-4 items-center cursor-pointer hover:bg-gray-100/60 transition-colors select-none"
         onClick={() => toggleOrder(order.id)}
       >
         {/* Order number */}
@@ -229,7 +272,14 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
         </div>
 
         {/* Status */}
-        <StatusBadge status={order.packageStatus} />
+        <div className="pr-6">
+          <StatusBadge status={order.packageStatus} />
+          {isCancelled && cancelReason && (
+            <div className="text-[11px] font-bold text-red-700 mt-1 line-clamp-1 truncate max-w-[150px]" title={cancelReason}>
+              {cancelReason}
+            </div>
+          )}
+        </div>
 
         {/* Customer / summary */}
         <div>
@@ -253,6 +303,20 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
               </>
             )}
           </div>
+          {/* İptal Sebebi Bilgisi */}
+          {isCancelled && cancelReason && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[12px] font-bold text-red-700 bg-red-100/90 border border-red-300 px-2 py-0.5 max-w-fit shadow-2xs">
+              <svg className="w-3.5 h-3.5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>İptal Sebebi: <span className="text-red-950 font-black">{cancelReason}</span></span>
+              {order.cancelInfo?.agentName && (
+                <span className="text-[10px] text-red-600 font-semibold ml-1">
+                  ({order.cancelInfo.agentName === "Customer" ? "Müşteri" : order.cancelInfo.agentName === "TGO App" ? "Trendyol Go" : order.cancelInfo.agentName})
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Branch */}
@@ -284,6 +348,52 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
       {/* Expanded detail */}
       {isExpanded && (
         <div className="border-t border-gray-100 bg-white px-6 py-5">
+          {/* İPTAL BİLGİLENDİRME BANNERI */}
+          {isCancelled && (
+            <div className="bg-red-50 border-2 border-red-500 p-4 mb-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black uppercase tracking-wider text-red-700">
+                      SİPARİŞ İPTAL EDİLDİ
+                    </span>
+                    {order.cancelInfo?.reasonType && (
+                      <span className="text-[10px] font-bold font-mono uppercase bg-red-200 text-red-900 border border-red-300 px-2 py-0.5">
+                        {order.cancelInfo.reasonType}
+                      </span>
+                    )}
+                    {order.cancelInfo?.reasonCode && (
+                      <span className="text-[10px] font-bold text-red-600 font-mono">
+                        Kod: #{order.cancelInfo.reasonCode}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-base font-black text-red-950 mt-1">
+                    {cancelReason}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-red-200 text-xs text-red-800 space-y-0.5 shrink-0">
+                {order.cancelInfo?.agentName && (
+                  <div>
+                    İptal Eden: <span className="font-bold text-red-900">{order.cancelInfo.agentName === "Customer" ? "Müşteri" : order.cancelInfo.agentName === "TGO App" ? "Trendyol Go" : order.cancelInfo.agentName}</span>
+                  </div>
+                )}
+                {order.lastModifiedDate && (
+                  <div className="text-[11px] text-red-600">
+                    İşlem Zamanı: {new Date(order.lastModifiedDate).toLocaleString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr] gap-6">
 
             {/* Left: Timeline + courier */}
@@ -361,9 +471,16 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
 
                       const lineAltCount = line.items?.filter((it: any) => it.isAlternative).length || 0;
                       const lineCancelledCount = line.items?.filter((it: any) => it.isCancelled).length || 0;
+                      const isCauseOfCancel = line.items?.some((it: any) => it.causedCancel);
 
                       return (
-                        <tr key={idx} className={`border-b border-gray-100 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"} hover:bg-gray-100 transition-colors`}>
+                        <tr key={idx} className={`border-b border-gray-100 ${
+                          isCauseOfCancel
+                            ? "bg-red-100/70 border-l-4 border-l-red-600"
+                            : idx % 2 === 0
+                              ? "bg-white"
+                              : "bg-gray-50/50"
+                        } hover:bg-gray-100 transition-colors`}>
                           <td className="px-3 py-2.5 font-bold text-[13px] text-gray-900 border-r border-gray-100">
                             {quantity}×
                           </td>
@@ -401,6 +518,11 @@ const OrderRow = memo(({ order, idx, isExpanded, toggleOrder, handleCopy, setSel
                               {lineCancelledCount > 0 && (
                                 <span className="text-[9px] font-bold bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 uppercase tracking-wide">
                                   {lineCancelledCount} İptal
+                                </span>
+                              )}
+                              {isCauseOfCancel && (
+                                <span className="text-[9px] font-black bg-red-600 text-white px-2 py-0.5 uppercase tracking-wide animate-pulse">
+                                  İptale Sebep Olan Ürün
                                 </span>
                               )}
                               {isSellerPromo && (
@@ -571,7 +693,8 @@ function SiparislerContent() {
         const q = searchQuery.toLowerCase();
         const num = (order.orderNumber || "").toLowerCase();
         const name = `${order.customer?.firstName || ""} ${order.customer?.lastName || ""}`.toLowerCase();
-        if (!num.includes(q) && !name.includes(q)) return false;
+        const cancelR = (getCancellationReason(order) || "").toLowerCase();
+        if (!num.includes(q) && !name.includes(q) && !cancelR.includes(q)) return false;
       }
       return true;
     }).sort((a: any, b: any) => sortDir === "desc" ? b.orderDate - a.orderDate : a.orderDate - b.orderDate);
@@ -754,9 +877,9 @@ function SiparislerContent() {
         ) : (
           <div className="bg-white divide-y divide-gray-100">
             {/* Table header */}
-            <div className="bg-gray-900 text-white px-6 py-3 hidden lg:grid grid-cols-[180px_140px_1fr_160px_160px_36px] gap-4 items-center">
+            <div className="bg-gray-900 text-white px-6 py-3 hidden lg:grid grid-cols-[180px_170px_1fr_160px_160px_36px] gap-4 items-center">
               <span className="text-[13px] font-bold uppercase tracking-widest text-gray-300">Sipariş No</span>
-              <span className="text-[13px] font-bold uppercase tracking-widest text-gray-300">Durum</span>
+              <span className="text-[13px] font-bold uppercase tracking-widest text-gray-300 pr-6">Durum</span>
               <span className="text-[13px] font-bold uppercase tracking-widest text-gray-300">Müşteri / Özet</span>
               <span className="text-[13px] font-bold uppercase tracking-widest text-gray-300">Şube</span>
               <button

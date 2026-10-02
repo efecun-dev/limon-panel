@@ -7,5 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateNotAvailable: (callback) => ipcRenderer.on('update-not-available', callback),
   onDownloadProgress: (callback) => ipcRenderer.on('download-progress', callback),
   onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
-  onError: (callback) => ipcRenderer.on('update-error', callback)
+  onError: (callback) => ipcRenderer.on('update-error', callback),
+  zoomIn: () => ipcRenderer.send('zoom-in'),
+  zoomOut: () => ipcRenderer.send('zoom-out'),
+  zoomReset: () => ipcRenderer.send('zoom-reset')
 });
